@@ -1,0 +1,254 @@
+#include <iostream>
+#include <time.h>
+#include <bits/stdc++.h>
+using namespace std;
+
+const string gene="NSEV";
+
+int a[100][100];
+int dim=8;
+int pasi=3*dim;
+#define nr_populatie 100
+#define maxGen 200
+
+int rnd(int a,int b)
+{
+    return a+(rand()%(b-a+1));
+}
+void initializare_matrice()
+{
+    dim++;
+    for(int i=0; i<=dim; i++)
+        a[i][0]=a[0][i]=a[dim][i]=a[i][dim]=-1;
+    a[1][1]=2;
+    dim--;
+    for(int i=1; i<=dim; i++)
+    {
+        int x=rnd(2,dim*dim);
+        if(a[x%dim==0?x/dim:x/dim+1][x%dim==0?dim:x%dim]==1)
+            i--;
+        else
+            a[x%dim==0?x/dim:x/dim+1][x%dim==0?dim:x%dim]=1;
+    }
+}
+
+void afis_matrice()
+{
+    for(int i=0; i<=dim+1; i++)
+    {
+        for(int j=0; j<=dim+1; j++)
+            cout<<a[i][j]<<" ";
+        cout<<endl;
+    }
+}
+
+struct individ
+{
+    char adn[1000]="";
+    int fitness;
+
+};
+int valid(individ x)
+{
+    int b[100][100]= {0};
+    int i=1,j=1;
+    int p=pasi;
+    while(p)
+    {
+        if(x.adn[pasi-p]=='N')
+            i--;
+        if(x.adn[pasi-p]=='S')
+            i++;
+        if(x.adn[pasi-p]=='E')
+            j++;
+        if(x.adn[pasi-p]=='V')
+            j--;
+        if(a[i][j]==-1||b[i][j]==2)
+            return 0;
+        else
+            b[i][j]=2;
+        p--;
+    }
+    return 1;
+}
+int fit(individ x)
+{
+    int i=1,j=1,mancare=0;
+    for(int k=0; k<pasi; k++)
+    {
+        if(x.adn[k]=='N')
+            i--;
+        if(x.adn[k]=='S')
+            i++;
+        if(x.adn[k]=='E')
+            j++;
+        if(x.adn[k]=='V')
+            j--;
+        if(a[i][j]==1)
+            mancare++;
+    }
+    return mancare;
+}
+
+void generare_parinti(individ populatie[101])
+{
+
+    for(int x=0; x<nr_populatie; x++)
+    {
+        int ii=1,jj=1,b[100][100]={0};
+        b[1][1]=2;
+        individ test;
+        for(int i=0; i<pasi; i++)
+        {
+            jaja:
+            int k=rnd(1,4);
+            if(k==1)
+            {
+                test.adn[i]='N';
+                ii--;
+            }
+
+            else if(k==2)
+            {
+                test.adn[i]='S';
+                ii++;
+            }
+
+            else if(k==3)
+            {
+                test.adn[i]='E';
+                jj++;
+            }
+
+            else if(k==4)
+            {
+                test.adn[i]='V';
+                jj--;
+            }
+
+            if(ii*jj==0||ii==dim+1||jj==dim+1||b[ii][jj]==2)
+                goto jaja;
+
+
+        }
+        // cout<<endl<<test.adn;
+        //if(valid(test))
+        //{
+            b[ii][jj]=2;
+            populatie[x]=test;
+            populatie[x].fitness=fit(populatie[x]);
+            populatie[x].adn[pasi]='\0';
+       //}
+       //else
+          // x--;
+    }
+}
+
+char mutatie()
+{
+    return gene[rnd(0,3)];
+}
+
+individ recombinare(individ p1, individ p2)
+{
+    individ copil;
+    for(int i=0; i<pasi; i++)
+    {
+        float p=rnd(0,100)/100;
+        if(p<0.45)
+            copil.adn[i]=p1.adn[i];
+        else if(p<0.90)
+            copil.adn[i]=p2.adn[i];
+        else
+            copil.adn[i]=mutatie();
+    }
+    return copil;
+}
+
+void sort_populatie(individ populatie[101])
+{
+    int k;
+    individ aux;
+    do
+    {
+        k=1;
+        for(int i=0; i<nr_populatie-1; i++)
+            if(populatie[i].fitness<populatie[i+1].fitness)
+            {
+                aux=populatie[i];
+                populatie[i]=populatie[i+1];
+                populatie[i+1]=aux;
+                k=0;
+            }
+    }
+    while(!k);
+}
+
+void afisare_parinti(individ populatie[101])
+{
+    for(int i=0; i<nr_populatie; i++)
+    {
+
+        cout<<i<<" "<<populatie[i].adn<<" fitness:"<<populatie[i].fitness<<endl;
+    }
+}
+
+int main()
+{
+    srand(time(NULL));
+
+    individ populatie[101];
+    //int maxpop=10000;
+    int ok=0;
+    int nr_gen=0;
+    initializare_matrice();
+    afis_matrice();
+
+
+    while(nr_gen<maxGen)
+    {
+        //again:
+        ///goto line cumva pe undeva idk
+        generare_parinti(populatie);
+
+        sort_populatie(populatie);
+        //afisare_parinti(populatie);
+        if(populatie[0].fitness==dim)
+        {
+            ok=1;
+            break;
+        }
+        individ new_populatie[101];
+        for(int i=0; i<10; i++)
+            new_populatie[i]=populatie[i];
+        for(int i=10; i<100; i++)
+        {
+            int r=rnd(0,50);
+            individ p1=populatie[r];
+            r=rnd(0,50);
+            individ p2=populatie[r];
+            individ copil=recombinare(p1,p2);
+            //if(valid(copil))
+                new_populatie[i]=copil;
+           // else
+               // i--;
+        }
+        cout<< "Generatie: " << nr_gen << "\t";
+        cout<< "ADN: "<< populatie[0].adn <<"\t";
+        cout<< "Fitness: "<< populatie[0].fitness << "\n";
+
+        for(int i=0; i<nr_populatie; i++)
+            populatie[i]=new_populatie[i];
+
+
+        nr_gen++;
+        ok=0;
+    }
+    cout<< "Generatie: " << nr_gen << "\t";
+    cout<< "ADN: "<< populatie[0].adn <<"\t";
+    cout<< "Fitness: "<< populatie[0].fitness << "\n";
+
+
+    // cout<<endl<<srand(time(0));
+
+}
